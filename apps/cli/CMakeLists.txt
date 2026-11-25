@@ -1,5 +1,16 @@
 add_executable(P2UNLOCK main.cpp)
 
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/drivers/SvIoCtrlx64.sys")
+    message(FATAL_ERROR "Missing bundled driver: drivers/SvIoCtrlx64.sys")
+endif()
+
+add_custom_command(TARGET P2UNLOCK POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:P2UNLOCK>/drivers"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/drivers/SvIoCtrlx64.sys"
+        "$<TARGET_FILE_DIR:P2UNLOCK>/drivers/SvIoCtrlx64.sys"
+    COMMENT "Copying bundled Seavo driver next to P2UNLOCK.exe")
+
 target_link_libraries(P2UNLOCK PRIVATE pseriescore pserieswindows)
 target_compile_definitions(P2UNLOCK PRIVATE UNICODE _UNICODE)
 

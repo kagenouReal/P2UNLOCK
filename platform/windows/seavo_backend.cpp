@@ -1,10 +1,12 @@
 #include "pseries/platform/seavo_backend.hpp"
+#include "pseries/platform/profile_store.hpp"
 #include "pseries/seavo_protocol.hpp"
 #include <bcrypt.h>
 #include <array>
 #include <atomic>
 #include <cstddef>
 #include <cstring>
+#include <filesystem>
 #include <string>
 #include <vector>
 namespace pseries::platform {
@@ -39,6 +41,50 @@ Error win32_error(const char* operation, DWORD error) {
 return Error{
 ErrorCode::service_error,
 std::string(operation) + " failed with Win32 error " + std::to_string(error)};
+}
+std::string narrow_path(const std::wstring& value) {
+return std::string(value.begin(), value.end());
+}
+Result<std::wstring> ensure_default_driver_available(const std::wstring& requested_path) {
+std::error_code ec;
+const std::filesystem::path requested(requested_path);
+if (std::filesystem::exists(requested, ec) && !ec) {
+return Result<std::wstring>{requested_path};
+}
+if (requested_path != kDefaultDriverPath) {
+return Result<std::wstring>{{Error{
+ErrorCode::invalid_configuration,
+"Seavo driver not found at " + narrow_path(requested_path) +
+"; automatic installation only applies to the default driver path"}}};
+}
+wchar_t module_path[MAX_PATH]{};
+const DWORD length = GetModuleFileNameW(nullptr, module_path, MAX_PATH);
+if (length == 0 || length >= MAX_PATH) {
+return Result<std::wstring>{{win32_error(
+"Resolve P2UNLOCK executable path", GetLastError())}};
+}
+const std::filesystem::path bundled =
+std::filesystem::path(std::wstring(module_path, length)).parent_path() /
+L"drivers" / L"SvIoCtrlx64.sys";
+ec.clear();
+if (!std::filesystem::exists(bundled, ec) || ec) {
+return Result<std::wstring>{{Error{
+ErrorCode::invalid_configuration,
+"Seavo driver is missing from the default path and no bundled copy was "
+"found next to P2UNLOCK.exe at " + narrow_path(bundled.wstring())}}};
+}
+ec.clear();
+std::filesystem::create_directories(requested.parent_path(), ec);
+if (ec) {
+return Result<std::wstring>{{Error{
+ErrorCode::service_error,
+"Create Seavo driver directory failed: " + ec.message()}}};
+}
+if (!CopyFileW(bundled.c_str(), requested.c_str(), FALSE)) {
+return Result<std::wstring>{{win32_error(
+"Install bundled Seavo driver", GetLastError())}};
+}
+return Result<std::wstring>{requested_path};
 }
 Error ntstatus_error(const char* operation, NTSTATUS status) {
 return Error{
@@ -180,7 +226,7 @@ actual_hash.push_back(digits[byte & 0x0F]);
 if (actual_hash != expected_driver_hash) {
 return Result<void>{{Error{
 ErrorCode::unsupported,
-"Seavo driver SHA-256 does not match the reviewed external-download binary"}}};
+"Seavo driver SHA-256 does not match the bundled/reviewed binary"}}};
 }
 return Result<void>{};
 }
@@ -252,8 +298,12 @@ SeavoBackend::~SeavoBackend() {
 static_cast<void>(close());
 }
 Result<std::unique_ptr<SeavoBackend>> SeavoBackend::load(const std::wstring& driver_path) {
+const auto available_driver = ensure_default_driver_available(driver_path);
+if (!available_driver.has_value()) {
+return Result<std::unique_ptr<SeavoBackend>>{{available_driver.error()}};
+}
 Error path_error{};
-const auto resolved_driver_path = resolve_driver_path(driver_path, path_error);
+const auto resolved_driver_path = resolve_driver_path(available_driver.get(), path_error);
 if (path_error.code != ErrorCode::none) {
 return Result<std::unique_ptr<SeavoBackend>>{{path_error}};
 }

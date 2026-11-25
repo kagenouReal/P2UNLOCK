@@ -28,11 +28,23 @@ jobs:
         shell: pwsh
         run: .\build\windows-msvc-x64\apps\cli\Release\P2UNLOCK.exe help
 
-      - name: Upload P2UNLOCK.exe
+      - name: Stage release bundle
+        shell: pwsh
+        run: |
+          $stage = "release/windows-x64"
+          New-Item -ItemType Directory -Force -Path "$stage/drivers" | Out-Null
+          Copy-Item "build/windows-msvc-x64/apps/cli/Release/P2UNLOCK.exe" "$stage/P2UNLOCK.exe"
+          Copy-Item "build/windows-msvc-x64/apps/cli/Release/drivers/SvIoCtrlx64.sys" "$stage/drivers/SvIoCtrlx64.sys"
+          Compress-Archive -Path "$stage/*" -DestinationPath "P2UNLOCK-windows-x64.zip" -Force
+
+      - name: Upload release bundle
         uses: actions/upload-artifact@v7
         with:
           name: P2UNLOCK-windows-x64
-          path: build/windows-msvc-x64/apps/cli/Release/P2UNLOCK.exe
+          path: |
+            release/windows-x64/P2UNLOCK.exe
+            release/windows-x64/drivers/SvIoCtrlx64.sys
+            P2UNLOCK-windows-x64.zip
           if-no-files-found: error
 
   linux-core:

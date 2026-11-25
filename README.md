@@ -90,7 +90,7 @@ If you have any of these, your test report is valuable.
 - Exactly one supported P104 GPU in the system (P104-100 or P104-101). Multiple P104 cards are refused.
 - The ACPI MCFG table must be present (used to reach PCI configuration space).
 - NVIDIA driver with CUDA support (`verify` and `bw` use the CUDA driver API).
-- The Seavo driver file (see [Getting the driver](#getting-the-driver)).
+- The bundled Seavo driver (auto-installed on first elevated run; see [Getting the driver](#getting-the-driver)).
 - A display that is not connected to the P104 (it has no display outputs). Use the iGPU or another card for output.
 
 ---
@@ -105,27 +105,28 @@ This project does not cover the soldering. It is delicate work, you can easily d
 
 ## Getting the driver
 
-P2UNLOCK talks to the hardware through a signed third-party kernel driver, `SvIoCtrlx64.sys`, which exposes physical-memory read/write. The driver is **not included** in this repository.
+P2UNLOCK talks to the hardware through a signed third-party kernel driver, `SvIoCtrlx64.sys`, which exposes physical-memory read/write. A hash-verified copy is **bundled** at [`drivers/SvIoCtrlx64.sys`](drivers/SvIoCtrlx64.sys), copied next to `P2UNLOCK.exe` by CMake, and included in the release ZIP.
 
-1. Obtain the driver yourself and place it at:
+On the first elevated run, P2UNLOCK automatically copies the bundled driver to:
 
-   ```text
-   C:\ProgramData\P104-Gen2x8\tool\drivers\SvIoCtrlx64.sys
-   ```
+```text
+C:\ProgramData\P104-Gen2x8\tool\drivers\SvIoCtrlx64.sys
+```
 
-2. The tool refuses to load the file unless its SHA-256 matches:
+The tool still refuses to load any file whose SHA-256 does not match:
 
-   ```text
-   9ade632e54c3f5e8c75eaf636f2910bad3a8a07d6f078e48c9641d3af1fe811c
-   ```
+```text
+9ade632e54c3f5e8c75eaf636f2910bad3a8a07d6f078e48c9641d3af1fe811c
+```
 
-   You can check it yourself first:
+You can verify both copies yourself:
 
-   ```powershell
-   Get-FileHash C:\ProgramData\P104-Gen2x8\tool\drivers\SvIoCtrlx64.sys -Algorithm SHA256
-   ```
+```powershell
+Get-FileHash .\drivers\SvIoCtrlx64.sys -Algorithm SHA256
+Get-FileHash C:\ProgramData\P104-Gen2x8\tool\drivers\SvIoCtrlx64.sys -Algorithm SHA256
+```
 
-3. Antivirus products commonly flag drivers of this type. See [Safety and security](#safety-and-security).
+If you only grabbed the bare `P2UNLOCK.exe` without its `drivers\` folder, place `SvIoCtrlx64.sys` in either of those locations manually. Antivirus products commonly flag drivers of this type; see [Safety and security](#safety-and-security).
 
 ---
 
@@ -139,7 +140,7 @@ cmake --preset windows-msvc-x64
 cmake --build build/windows-msvc-x64 --config Release
 ```
 
-The built executable is at `build/windows-msvc-x64/apps/cli/Release/P2UNLOCK.exe`.
+The built executable is at `build/windows-msvc-x64/apps/cli/Release/P2UNLOCK.exe`, with the bundled driver copied to `build/windows-msvc-x64/apps/cli/Release/drivers/SvIoCtrlx64.sys`.
 
 The `linux-core` preset builds only the portable core library (link and plan logic); the tool itself is Windows-only:
 
@@ -148,7 +149,7 @@ cmake --preset linux-core
 cmake --build build/linux-core
 ```
 
-You are encouraged to build from source rather than trust a prebuilt binary. GitHub Actions builds both configurations on every push and pull request; the latest `P2UNLOCK.exe` is attached to each successful run as the `P2UNLOCK-windows-x64` artifact.
+You are encouraged to build from source rather than trust a prebuilt binary. GitHub Actions builds both configurations on every push and pull request; each successful run attaches a `P2UNLOCK-windows-x64` artifact containing `P2UNLOCK.exe`, `drivers\SvIoCtrlx64.sys`, and a ready-to-extract `P2UNLOCK-windows-x64.zip`.
 
 ---
 
@@ -225,7 +226,8 @@ If the link is already at the target, the tool does nothing and says so. If it i
 | Message or symptom | Likely cause and what to do |
 | --- | --- |
 | `Exactly one supported P104 GPU ... is required` | No P104 found, or more than one. Remove other P104 cards. |
-| `Seavo driver SHA-256 does not match ...` | The driver file is wrong or modified. Use the exact file with the hash listed above. |
+| `Seavo driver SHA-256 does not match ...` | The driver file is wrong or modified. Restore the bundled `drivers\SvIoCtrlx64.sys` copy (hash listed above) to the install path. |
+| `Seavo driver is missing ... no bundled copy was found next to P2UNLOCK.exe` | You downloaded the bare `.exe`. Download the release ZIP instead, or copy `SvIoCtrlx64.sys` next to `P2UNLOCK.exe` into a `drivers\` folder. |
 | `Seavo device is already present; refusing to take over an existing driver` | Another tool is holding the driver. Close it, or stop its service, and retry. |
 | `P104 is already at Gen2 x4; requested x8 was not reached; no writes were performed` | The link is stuck at x4. Most often a hardware issue: the extra lanes are not enabled, one lane in the range is dead or shorted, or the slot or riser only provides four lanes. |
 | `Link did not settle at Gen2 x8 ...` | Training failed after the write. Check lane continuity and shorts and try another slot, then report the details (see [Report your results](#help-wanted-report-your-results)). The tool attempts to restore the previous state. |
@@ -242,8 +244,9 @@ If the link is already at the target, the tool does nothing and says so. If it i
 
 Please understand what this tool does before you run it.
 
-- It uses a kernel driver with physical-memory access. While loaded, that capability is available to any administrator-level process. This is the same class of risk as other "bring your own vulnerable driver" tools, and antivirus products will often flag it.
-- Mitigations in the code: the driver file's SHA-256 is verified before it is loaded; it is loaded through a temporary kernel service that is removed afterwards; and the tool refuses to take over a driver device that already exists.
+- It uses a kernel driver with physical-memory access. While loaded, that capability is available to any administrator-level process. This is the same class of risk as other "bring your own vulnerable driver" tools, and antivirus products will often flag it. Bundling the driver does not remove this risk.
+- Mitigations in the code: the bundled driver's SHA-256 is verified before it is loaded; it is loaded through a temporary kernel service that is removed afterwards; and the tool refuses to take over a driver device that already exists.
+- The bundled driver is provided for convenience only. You remain responsible for deciding whether to allow such a driver on your system; see the [Disclaimer](#disclaimer).
 - **No network access.** The source contains no network code and does not download or launch other programs.
 - **Service control channel.** The service listens on the named pipe `\\.\pipe\P2UNLOCK`, restricted to SYSTEM and Administrators.
 - **Register writes are guarded.** Writes are planned and journaled with before/after values, unexpected register states are rejected, and failed operations are rolled back.
@@ -291,6 +294,7 @@ Hardware measurements with a multimeter (for example, continuity from the gold f
 
 - This tool was written with heavy AI assistance. The maintainer used AI coding assistants for essentially all of the design and implementation, and for much of this documentation. It has not had an independent security or code review. Treat it accordingly: read the source, build it yourself, and do not assume the code is free of mistakes just because it works on one machine.
 - It draws on existing P104 unlock projects. The approach, and parts of the register-level behaviour, were modelled on earlier community work rather than invented from scratch. Credit for the original research and discoveries belongs to those projects and their authors. If you believe a specific technique or piece of documentation here originates from your work, please open an issue so it can be credited with a link.
+- The bundled `SvIoCtrlx64.sys` is an unmodified third-party driver sample from the public [LOLDrivers catalog](https://www.loldrivers.io/drivers/8d2f15a5-e71a-47ba-a391-55d1a1962368/); its SHA-256 was matched to the expected value before inclusion. It is not authored by this project and is bundled only so the tool works out of the box. Use at your own risk.
 - Where this project differs, the differences (for example the transaction journal and rollback, the driver hash check, and the CUDA verification) were added by the maintainer with AI help and are covered only by the single-machine testing described above.
 
 If you notice a behaviour that looks copied from, or in conflict with, another project's documentation, please open an issue so it can be credited or corrected.
