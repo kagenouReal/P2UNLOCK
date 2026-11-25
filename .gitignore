@@ -1,0 +1,6 @@
+.analysis-tools/
+.venv-analysis/
+analysis/ghidra-project/
+external-downloads/
+.analysis-output/
+build/

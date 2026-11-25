@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-msvc-x64:
+    name: Windows MSVC x64 (P2UNLOCK.exe)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure (CMake preset)
+        run: cmake --preset windows-msvc-x64
+
+      - name: Build Release
+        run: cmake --build --preset windows-msvc-x64 --config Release --parallel
+
+      - name: Smoke test (help output only, no hardware access)
+        shell: pwsh
+        run: .\build\windows-msvc-x64\Release\P2UNLOCK.exe help
+
+      - name: Upload P2UNLOCK.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: P2UNLOCK-windows-x64
+          path: build/windows-msvc-x64/Release/P2UNLOCK.exe
+          if-no-files-found: error
+
+  linux-core:
+    name: Linux portable core
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure (CMake preset)
+        run: cmake --preset linux-core
+
+      - name: Build
+        run: cmake --build --preset linux-core --parallel
