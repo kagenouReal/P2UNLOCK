@@ -12,10 +12,11 @@ permissions:
 jobs:
   windows-msvc-x64:
     name: Windows MSVC x64 (P2UNLOCK.exe)
-    runs-on: windows-latest
+    # Preset targets "Visual Studio 17 2022"; windows-latest now ships VS 2026.
+    runs-on: windows-2022
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure (CMake preset)
         run: cmake --preset windows-msvc-x64
@@ -28,7 +29,7 @@ jobs:
         run: .\build\windows-msvc-x64\Release\P2UNLOCK.exe help
 
       - name: Upload P2UNLOCK.exe
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: P2UNLOCK-windows-x64
           path: build/windows-msvc-x64/Release/P2UNLOCK.exe
@@ -39,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure (CMake preset)
         run: cmake --preset linux-core
