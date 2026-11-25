@@ -8,10 +8,22 @@ A Windows tool that unlocks the PCIe link speed (Gen2) and width (x8 / x16) of t
 
 > **Development roadmap:** P2UNLOCK is currently CLI-only. The main priority is collecting tester reports from the community to improve compatibility, reliability, and overall functionality across different hardware configurations. After gathering sufficient feedback, the plan is to expand the project with additional features. The next major focus will likely be a GUI to make P2UNLOCK easier to use for everyone, including users who are not comfortable with command-line tools.
 
+## Quick download
+
+**Download only [`P2UNLOCK-windows-x64.zip`](https://github.com/kagenouReal/P2UNLOCK/releases/latest/download/P2UNLOCK-windows-x64.zip)** from the [latest release](https://github.com/kagenouReal/P2UNLOCK/releases/latest). It is the only asset you need — it already contains `P2UNLOCK.exe` and `drivers\SvIoCtrlx64.sys`.
+
+1. Extract the ZIP anywhere (for example, to the Desktop).
+2. Right-click `P2UNLOCK.exe` → **Run as administrator**.
+3. On first run the bundled driver is copied automatically to `%ProgramData%\P104-Gen2x8\tool\drivers\`. You do **not** need to copy any `.sys` file manually.
+4. Check the card with `P2UNLOCK.exe scan`, then follow [Quick start](#quick-start).
+
+If you only have the bare `.exe`, put `SvIoCtrlx64.sys` next to it in a `drivers\` folder — see [Getting the driver](#getting-the-driver).
+
 ---
 
 ## Table of contents
 
+- [Quick download](#quick-download)
 - [What it does (and does not do)](#what-it-does-and-does-not-do)
 - [Tested configuration](#tested-configuration)
 - [What is and is not verified](#what-is-and-is-not-verified)
