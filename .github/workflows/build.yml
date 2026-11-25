@@ -26,13 +26,13 @@ jobs:
 
       - name: Smoke test (help output only, no hardware access)
         shell: pwsh
-        run: .\build\windows-msvc-x64\Release\P2UNLOCK.exe help
+        run: .\build\windows-msvc-x64\apps\cli\Release\P2UNLOCK.exe help
 
       - name: Upload P2UNLOCK.exe
         uses: actions/upload-artifact@v7
         with:
           name: P2UNLOCK-windows-x64
-          path: build/windows-msvc-x64/Release/P2UNLOCK.exe
+          path: build/windows-msvc-x64/apps/cli/Release/P2UNLOCK.exe
           if-no-files-found: error
 
   linux-core:
