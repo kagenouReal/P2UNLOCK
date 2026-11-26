@@ -111,7 +111,7 @@ If you have any of these, your test report is valuable.
 
 To train above x4, the extra lanes of the card must be physically enabled. On the author's card this was done by adding AC-coupling capacitors on the TX pairs of the extra lanes (two capacitors per lane, **0402, 220 nF, X7R, 16 V**). Four extra lanes are needed to go from x4 to x8, and twelve for x16.
 
-> **Check your card before modifying it.** Some board-partner variants (for example certain ASUS, STO and Inno3D P104 cards) reportedly ship with these extra lane capacitors already populated from the factory. If yours already has them, no soldering is needed — just verify continuity and that there are no shorts. A card without them stays at x4 no matter what the software writes, so this is the most common reason a width unlock does not take effect.
+> **Check your card before modifying it.** Some board-partner variants (for example certain ASUS and Inno3D P104 cards) reportedly ship with these extra lane capacitors already populated from the factory. If yours already has them, no soldering is needed — just verify continuity and that there are no shorts. A card without them stays at x4 no matter what the software writes, so this is the most common reason a width unlock does not take effect.
 
 This project does not cover the soldering. It is delicate work, you can easily destroy a pad or a trace, and nothing here is an endorsement of any particular procedure. If you modify your card, do so at your own risk, and check for shorts and continuity with a multimeter before you power the card on.
 
@@ -243,7 +243,7 @@ If the link is already at the target, the tool does nothing and says so. If it i
 | `Seavo driver SHA-256 does not match ...` | The driver file is wrong or modified. Restore the bundled `drivers\SvIoCtrlx64.sys` copy (hash listed above) to the install path. |
 | `Seavo driver is missing ... no bundled copy was found next to P2UNLOCK.exe` | You downloaded the bare `.exe`. Download the release ZIP instead, or copy `SvIoCtrlx64.sys` next to `P2UNLOCK.exe` into a `drivers\` folder. |
 | `Seavo device is already present; refusing to take over an existing driver` | Another tool is holding the driver. Close it, or stop its service, and retry. |
-| `P104 is already at Gen2 x4; requested x8 was not reached; no writes were performed` | The link is stuck at x4. Most often a hardware issue: the extra lane capacitors are missing (some ASUS/STO/Inno3D variants already have them from the factory — check yours first), one lane is dead or shorted, or the slot/riser only provides four lanes. |
+| `P104 is already at Gen2 x4; requested x8 was not reached; no writes were performed` | The link is stuck at x4. Most often a hardware issue: the extra lane capacitors are missing (some ASUS/Inno3D variants already have them from the factory — check yours first), one lane is dead or shorted, or the slot/riser only provides four lanes. |
 | `Link did not settle at Gen2 x8 ...` | Training failed after the write. Check lane continuity and shorts and try another slot, then report the details (see [Report your results](#help-wanted-report-your-results)). The tool attempts to restore the previous state. |
 | Link shows `@ x1` or very low after a hardware change | A coupling capacitor is shorted or a lane is dead. Power off and re-check with a multimeter before retrying. |
 | `Both ends must be at a stable matching Gen1 or Gen2 link` (from `verify`) | The GPU and the upstream port disagree or are still training. Wait a moment and run `status`. |
